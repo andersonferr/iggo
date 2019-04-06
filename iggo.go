@@ -2,6 +2,7 @@ package iggo
 
 import (
 	"fmt"
+	"log"
 	"runtime"
 
 	"github.com/andersonferr/iggo/backend"
@@ -43,25 +44,27 @@ func handleEvents() {
 		env.NextEvent(&e)
 		w := handlerToWindow[e.Handler]
 
+		if w == nil {
+			log.Print("handler == nil")
+			continue
+		}
+
 		switch e.Type {
 		case backend.EventTypeClose:
 			if callback := w.closeCallback; callback != nil {
 				callback(w)
 			}
 			w.Close()
+			delete(handlerToWindow, e.Handler)
 
 		case backend.EventTypeResize:
 			if e.Width != w.Width() || e.Height != w.Height() {
 				resize(w, e.Width, e.Height)
 			}
-		}
 
-		for _, w := range handlerToWindow {
+		case backend.EventTypeExpose:
 			w.draw()
-
 		}
-
-		//time.Sleep(30 * time.Millisecond)
 	}
 }
 
