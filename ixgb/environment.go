@@ -2,7 +2,6 @@ package ixgb
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/BurntSushi/xgb"
 	"github.com/BurntSushi/xgb/xproto"
@@ -43,9 +42,6 @@ func (env *Environment) Start() {
 	setup := xproto.Setup(X)
 	screen := setup.DefaultScreen(X)
 
-	log.Printf("root depth %d", screen.RootDepth)
-	log.Printf("image byte order is MSBFirst is %t", setup.ImageByteOrder == xproto.ImageOrderMSBFirst)
-
 	env.conn = X
 	env.screen = screen
 }
@@ -56,17 +52,33 @@ func (env *Environment) Finish() {
 }
 
 // NextEvent gets the next event.
-func (env *Environment) NextEvent(*backend.Event) {
+func (env *Environment) NextEvent(event *backend.Event) {
 	ev, xerr := env.conn.WaitForEvent()
 	if ev == nil && xerr == nil {
-		fmt.Println("Both event and error are nil. Exiting...")
-		return
+		panic(xerr)
 	}
 
 	if ev != nil {
-		fmt.Printf("Event: %s\n", ev)
+		switch e := ev.(type) {
+		case xproto.ClientMessageEvent:
+			event.Type = backend.EventTypeClose
+			event.Handler = get(e.Window)
+
+		case xproto.ExposeEvent:
+			event.Type = backend.EventTypeExpose
+			event.Height = int(e.Height)
+			event.Width = int(e.Width)
+
+		case xproto.MapNotifyEvent:
+		case xproto.UnmapNotifyEvent:
+		case xproto.ButtonPressEvent:
+		case xproto.ButtonReleaseEvent:
+		case xproto.MotionNotifyEvent:
+		default:
+		}
 	}
 	if xerr != nil {
-		fmt.Printf("Error: %s\n", xerr)
+		// fmt.Printf("Error: %s\n", xerr)
+		panic(xerr)
 	}
 }

@@ -1,6 +1,8 @@
 package ixgb
 
 import (
+	"sync"
+
 	"github.com/BurntSushi/xgb"
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/andersonferr/iggo/backend"
@@ -22,11 +24,9 @@ func newHandler(env *Environment, width, height int) *Handler {
 		panic(err)
 	}
 
-	var valueMask uint32
-	var valueList []uint32
+	const valueMask uint32 = xproto.CwEventMask | xproto.CwBackPixel
 
-	valueMask |= xproto.CwEventMask
-	valueMask |= xproto.CwBackPixel
+	var valueList []uint32
 
 	if valueMask&xproto.CwBackPixel != 0 {
 		valueList = append(valueList, env.screen.WhitePixel)
@@ -35,6 +35,7 @@ func newHandler(env *Environment, width, height int) *Handler {
 	if valueMask&xproto.CwEventMask != 0 {
 		valueList = append(valueList,
 			xproto.EventMaskStructureNotify|
+				xproto.EventMaskExposure|
 				xproto.EventMaskButtonPress|
 				xproto.EventMaskButtonRelease|
 				xproto.EventMaskButtonMotion|
@@ -75,13 +76,17 @@ func newHandler(env *Environment, width, height int) *Handler {
 		32, 1, data[:],
 	)
 
-	return &Handler{
+	handler := &Handler{
 		env:      env,
 		windowID: wid,
 		gcID:     gcid,
 
 		wmDeleteWindowAtom: wmDeleteWindowAtom,
 	}
+
+	put(wid, handler)
+
+	return handler
 }
 
 func (handler *Handler) SetVisibility(visibility bool) {
@@ -118,4 +123,26 @@ func getAtomOrPanic(env *Environment, atomName string) xproto.Atom {
 	}
 
 	return reply.Atom
+}
+
+var (
+	mu                 sync.Mutex
+	mapWindowToHandler map[xproto.Window]*Handler
+)
+
+func init() {
+	mapWindowToHandler = make(map[xproto.Window]*Handler)
+}
+
+func put(windowID xproto.Window, handler *Handler) {
+	mu.Lock()
+	mapWindowToHandler[windowID] = handler
+	mu.Unlock()
+}
+
+func get(windowID xproto.Window) (handler *Handler) {
+	mu.Lock()
+	handler = mapWindowToHandler[windowID]
+	mu.Unlock()
+	return
 }
