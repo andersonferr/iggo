@@ -1,8 +1,6 @@
 package ixgb
 
 import (
-	"sync"
-
 	"github.com/BurntSushi/xgb"
 	"github.com/BurntSushi/xgb/xproto"
 	"github.com/andersonferr/iggo/backend"
@@ -84,8 +82,6 @@ func newHandler(env *Environment, width, height int) *Handler {
 		wmDeleteWindowAtom: wmDeleteWindowAtom,
 	}
 
-	put(wid, handler)
-
 	return handler
 }
 
@@ -108,6 +104,7 @@ func (handler *Handler) Deployer() backend.Deployer {
 
 func (handler *Handler) Destroy() {
 	handler.SetVisibility(false)
+	handler.env.remove(handler.windowID)
 }
 
 func getAtomOrPanic(env *Environment, atomName string) xproto.Atom {
@@ -123,26 +120,4 @@ func getAtomOrPanic(env *Environment, atomName string) xproto.Atom {
 	}
 
 	return reply.Atom
-}
-
-var (
-	mu                 sync.Mutex
-	mapWindowToHandler map[xproto.Window]*Handler
-)
-
-func init() {
-	mapWindowToHandler = make(map[xproto.Window]*Handler)
-}
-
-func put(windowID xproto.Window, handler *Handler) {
-	mu.Lock()
-	mapWindowToHandler[windowID] = handler
-	mu.Unlock()
-}
-
-func get(windowID xproto.Window) (handler *Handler) {
-	mu.Lock()
-	handler = mapWindowToHandler[windowID]
-	mu.Unlock()
-	return
 }
