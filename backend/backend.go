@@ -2,7 +2,6 @@ package backend
 
 import (
 	"image"
-	"sync"
 )
 
 type Handler interface {
@@ -33,28 +32,6 @@ type Environment interface {
 
 	//Finish clean the environment after listen events.
 	Finish()
-}
-
-// EnvironmentProvider provides a new environment.
-type EnvironmentProvider func() Environment
-
-var (
-	handlers = map[string]EnvironmentProvider{}
-	mutex    sync.Mutex
-)
-
-func Get(name string) EnvironmentProvider {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	return handlers[name]
-}
-
-func Register(name string, provider EnvironmentProvider) {
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	handlers[name] = provider
 }
 
 type BaseHandler struct {
