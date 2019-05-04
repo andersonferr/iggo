@@ -24,12 +24,18 @@ func init() {
 	_ = backend.Environment(env)
 }
 
+// EnvName the name of envimenment.
+const EnvName = "IXGB"
+
 func init() {
-	backend.Register("XGB", func() backend.Environment {
-		return &Environment{
-			handlers: make(map[xproto.Window]*Handler),
-		}
-	})
+	backend.DefaultEnvironmentManager.RegisterProvider(EnvName, New)
+}
+
+//New creates a new backend.Environment.
+func New() backend.Environment {
+	return &Environment{
+		handlers: make(map[xproto.Window]*Handler),
+	}
 }
 
 // CreateHandler create a new backend.Handler for this environment.
