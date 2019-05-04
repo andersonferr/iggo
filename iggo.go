@@ -3,16 +3,19 @@ package iggo
 import (
 	"fmt"
 	"log"
-	"runtime"
+	"os"
 
 	"github.com/andersonferr/iggo/backend"
 )
+
+var runnerLogger = log.New(os.Stderr, "iggo runner: ", log.LstdFlags)
 
 var env backend.Environment
 
 //Use set the environment provider to be used when create a new environment.
 func Use(name string) error {
-	provider := backend.Get(name)
+	runnerLogger.Println("changing the backend.")
+	provider := backend.DefaultEnvironmentManager.GetProvider(name)
 	if provider == nil {
 		return fmt.Errorf("backend %q is not registered", name)
 	}
@@ -23,7 +26,6 @@ func Use(name string) error {
 
 //Run runs the application main function after prepare the environment for that
 func Run(fn func()) {
-	runtime.LockOSThread()
 
 	closeRequested = false
 	env.Start()
