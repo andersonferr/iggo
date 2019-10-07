@@ -9,7 +9,11 @@ import (
 )
 
 type Handler struct {
-	backend.BaseHandler
+	drawable backend.Drawable
+
+	title         string
+	width, height int
+	x, y          int
 
 	env      *Environment
 	windowID xproto.Window
@@ -18,7 +22,8 @@ type Handler struct {
 	wmDeleteWindowAtom xproto.Atom
 }
 
-func newHandler(env *Environment, width, height int) *Handler {
+func (h *Handler) alloc() {
+	env := h.env
 	wid, err := xproto.NewWindowId(env.conn)
 	if err != nil {
 		panic(err)
@@ -50,7 +55,7 @@ func newHandler(env *Environment, width, height int) *Handler {
 		wid,
 		env.screen.Root,
 		0, 0, // x, y
-		uint16(width), uint16(height), // width, height
+		uint16(h.width), uint16(h.height), // width, height
 		2, // border
 		xproto.WindowClassInputOutput,
 		env.screen.RootVisual,
@@ -76,17 +81,10 @@ func newHandler(env *Environment, width, height int) *Handler {
 		32, 1, data[:],
 	)
 
-	handler := &Handler{
-		env:      env,
-		windowID: wid,
-		gcID:     gcid,
-
-		wmDeleteWindowAtom: wmDeleteWindowAtom,
-	}
-
-	put(wid, handler)
-
-	return handler
+	h.gcID = gcid
+	h.windowID = wid
+	h.wmDeleteWindowAtom = wmDeleteWindowAtom
+	h.SetVisibility(true)
 }
 
 func (handler *Handler) SetVisibility(visibility bool) {
@@ -100,6 +98,14 @@ func (handler *Handler) SetVisibility(visibility bool) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (handler *Handler) SetDrawable(drawable backend.Drawable) {
+	handler.drawable = drawable
+}
+
+func (handler *Handler) Drawable() backend.Drawable {
+	return handler.drawable
 }
 
 func (handler *Handler) Deployer() backend.Deployer {
