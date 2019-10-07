@@ -56,9 +56,7 @@ func (env *Environment) Run() error {
 		fmt.Printf("Handler: %#v\n", env.handlers[i])
 	}
 
-	var event backend.Event
-
-	for {
+	for len(env.handlers) != 0 {
 		ev, xerr := env.conn.WaitForEvent()
 		if ev == nil && xerr == nil {
 			panic("nil answer")
@@ -67,14 +65,16 @@ func (env *Environment) Run() error {
 		if ev != nil {
 			switch e := ev.(type) {
 			case xproto.ClientMessageEvent:
-				event.Type = backend.EventTypeClose
-				event.Handler = get(e.Window)
+				handler := env.findHandler(e.Window)
+				if e.Data.Data32[0] == uint32(handler.wmDeleteWindowAtom) {
+					err := xproto.DestroyWindowChecked(env.conn, e.Window).Check()
+					if err != nil {
+						panic(err)
+					}
+					env.removeHandler(handler)
+				}
 
 			case xproto.ExposeEvent:
-				event.Type = backend.EventTypeExpose
-				event.Height = int(e.Height)
-				event.Width = int(e.Width)
-
 			case xproto.MapNotifyEvent:
 			case xproto.UnmapNotifyEvent:
 			case xproto.ButtonPressEvent:
@@ -106,4 +106,22 @@ func (env *Environment) CreateHandler(title string, x, y, width, height int) (ba
 	env.handlers = append(env.handlers, handler)
 
 	return &handler, nil
+}
+
+func (env *Environment) findHandler(wid xproto.Window) *Handler {
+	for i := 0; i < len(env.handlers); i++ {
+		if env.handlers[i].windowID == wid {
+			return &env.handlers[i]
+		}
+	}
+
+	return nil
+}
+
+func (env *Environment) removeHandler(handler *Handler) {
+	for i := 0; i < len(env.handlers); i++ {
+		if &env.handlers[i] == handler {
+			env.handlers = append(env.handlers[:i], env.handlers[i+1:]...)
+		}
+	}
 }
