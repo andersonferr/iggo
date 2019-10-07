@@ -8,6 +8,7 @@ import (
 	"github.com/andersonferr/iggo/backend"
 )
 
+// Handler handles the native window.
 type Handler struct {
 	drawable backend.Drawable
 
@@ -22,8 +23,9 @@ type Handler struct {
 	wmDeleteWindowAtom xproto.Atom
 }
 
-func (h *Handler) alloc() {
-	env := h.env
+// alloc allocate resources when the environment starts running.
+func (handler *Handler) alloc() {
+	env := handler.env
 	wid, err := xproto.NewWindowId(env.conn)
 	if err != nil {
 		panic(err)
@@ -55,7 +57,7 @@ func (h *Handler) alloc() {
 		wid,
 		env.screen.Root,
 		0, 0, // x, y
-		uint16(h.width), uint16(h.height), // width, height
+		uint16(handler.width), uint16(handler.height), // width, height
 		2, // border
 		xproto.WindowClassInputOutput,
 		env.screen.RootVisual,
@@ -81,12 +83,13 @@ func (h *Handler) alloc() {
 		32, 1, data[:],
 	)
 
-	h.gcID = gcid
-	h.windowID = wid
-	h.wmDeleteWindowAtom = wmDeleteWindowAtom
-	h.SetVisibility(true)
+	handler.gcID = gcid
+	handler.windowID = wid
+	handler.wmDeleteWindowAtom = wmDeleteWindowAtom
+	handler.SetVisibility(true)
 }
 
+// SetVisibility of the native window.
 func (handler *Handler) SetVisibility(visibility bool) {
 	var err error
 	if visibility {
@@ -100,10 +103,12 @@ func (handler *Handler) SetVisibility(visibility bool) {
 	}
 }
 
+// SetDrawable sets the drawable.
 func (handler *Handler) SetDrawable(drawable backend.Drawable) {
 	handler.drawable = drawable
 }
 
+// Drawable gets the drawable
 func (handler *Handler) Drawable() backend.Drawable {
 	return handler.drawable
 }
@@ -112,10 +117,12 @@ func (handler *Handler) Deployer() backend.Deployer {
 	return newDeployer(handler.env, handler.windowID, handler.gcID)
 }
 
+// Destroy the handler freeing the resources allocated.
 func (handler *Handler) Destroy() {
-	handler.SetVisibility(false)
+	panic("not implemented")
 }
 
+// getAtomOrPanic gets the atom or panic
 func getAtomOrPanic(env *Environment, atomName string) xproto.Atom {
 	reply, err := xproto.InternAtom(
 		env.conn,

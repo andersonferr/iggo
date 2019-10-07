@@ -41,6 +41,7 @@ func (app *Application) Run() error {
 	return env.Run()
 }
 
+// AddWindow adds the given window to the application.
 func (app *Application) AddWindow(w *Window) {
 	handler, err := app.env.CreateHandler(w.title, w.x, w.y, w.width, w.height)
 
