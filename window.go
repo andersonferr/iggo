@@ -18,6 +18,15 @@ type Window struct {
 
 	resizeCallback func(window *Window, width, height int)
 	closeCallback  func(window *Window)
+
+	// title
+	title string
+
+	// position
+	x, y int
+
+	// dimensions
+	width, height int
 }
 
 func init() {
@@ -25,7 +34,7 @@ func init() {
 	_ = Container(w)
 }
 
-func CreateWindow(title string, width, height int) *Window {
+func CreateWindow(title string, x, y, width, height int) *Window {
 	if width < 0 {
 		width = 0
 	}
@@ -34,16 +43,13 @@ func CreateWindow(title string, width, height int) *Window {
 		height = 0
 	}
 
-	w := &Window{}
-
-	w.handler = env.CreateHandler(width, height)
-	bounds := image.Rect(0, 0, width, height)
-	w.buffer = image.NewRGBA(bounds)
-
-	w.handler.SetData(w)
-	handlerToWindow[w.handler] = w
-
-	return w
+	return &Window{
+		title:  title,
+		x:      x,
+		y:      y,
+		width:  width,
+		height: height,
+	}
 }
 
 func (w *Window) SetVisibility(visibility bool) {
@@ -93,7 +99,6 @@ func (w *Window) Close() {
 func (w *Window) draw() {
 	d := NewDrawer(w.buffer)
 	w.container.Draw(d)
-	w.handler.Deployer().Deploy(w.buffer, w.buffer.Bounds())
 }
 
 func (w *Window) Parent() Container {
