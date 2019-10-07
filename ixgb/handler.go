@@ -83,6 +83,14 @@ func (handler *Handler) alloc() {
 		32, 1, data[:],
 	)
 
+	xproto.ChangeProperty(
+		env.conn,
+		xproto.PropModeReplace,
+		wid,
+		xproto.AtomWmName, xproto.AtomString,
+		8, uint32(len(handler.title)), []byte(handler.title),
+	)
+
 	handler.gcID = gcid
 	handler.windowID = wid
 	handler.wmDeleteWindowAtom = wmDeleteWindowAtom
