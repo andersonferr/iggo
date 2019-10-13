@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"sort"
 	"sync"
 )
 
@@ -54,4 +55,21 @@ func Register(backend Backend) {
 	backendsMu.Lock()
 	backends[name] = backend
 	backendsMu.Unlock()
+}
+
+// List returns a list of all registered backends.
+func List() []string {
+	backendsMu.RLock()
+	defer backendsMu.RUnlock()
+
+	l := make([]string, len(backends), len(backends))
+	i := 0
+	for k := range backends {
+		l[i] = k
+		i++
+	}
+
+	sort.Strings(l)
+
+	return l
 }
