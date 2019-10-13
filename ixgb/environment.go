@@ -9,9 +9,6 @@ import (
 	"github.com/andersonferr/iggo/backend"
 )
 
-// BackendName the name of backend
-const BackendName = "XGB"
-
 // Environment implements backend.Environment for XGB.
 type Environment struct {
 	mu sync.Mutex
@@ -22,18 +19,7 @@ type Environment struct {
 	screen *xproto.ScreenInfo
 }
 
-func init() {
-	// help typechecker
-	var env *Environment
-	_ = backend.Environment(env)
-}
-
-func init() {
-	backend.Register(BackendName, func() backend.Environment {
-		return &Environment{}
-	})
-}
-
+// Run runs the app.
 func (env *Environment) Run() error {
 	if len(env.handlers) == 0 {
 		return nil
@@ -56,9 +42,7 @@ func (env *Environment) Run() error {
 		fmt.Printf("Handler: %#v\n", env.handlers[i])
 	}
 
-	var event backend.Event
-
-	for {
+	for len(env.handlers) != 0 {
 		ev, xerr := env.conn.WaitForEvent()
 		if ev == nil && xerr == nil {
 			panic("nil answer")
@@ -67,20 +51,29 @@ func (env *Environment) Run() error {
 		if ev != nil {
 			switch e := ev.(type) {
 			case xproto.ClientMessageEvent:
-				event.Type = backend.EventTypeClose
-				event.Handler = get(e.Window)
+				handler := env.findHandler(e.Window)
+				if e.Data.Data32[0] == uint32(handler.wmDeleteWindowAtom) {
+					err := xproto.DestroyWindowChecked(env.conn, e.Window).Check()
+					if err != nil {
+						panic(err)
+					}
+					env.removeHandler(handler)
+				}
 
 			case xproto.ExposeEvent:
-				event.Type = backend.EventTypeExpose
-				event.Height = int(e.Height)
-				event.Width = int(e.Width)
-
+				fmt.Printf("%#v\n", e)
 			case xproto.MapNotifyEvent:
+				fmt.Printf("%#v\n", e)
 			case xproto.UnmapNotifyEvent:
+				fmt.Printf("%#v\n", e)
 			case xproto.ButtonPressEvent:
+				fmt.Printf("%#v\n", e)
 			case xproto.ButtonReleaseEvent:
+				fmt.Printf("%#v\n", e)
 			case xproto.MotionNotifyEvent:
+				fmt.Printf("%#v\n", e)
 			default:
+				fmt.Printf("%#v\n", e)
 			}
 		}
 		if xerr != nil {
@@ -106,4 +99,28 @@ func (env *Environment) CreateHandler(title string, x, y, width, height int) (ba
 	env.handlers = append(env.handlers, handler)
 
 	return &handler, nil
+}
+
+func (env *Environment) findHandler(wid xproto.Window) *Handler {
+	for i := 0; i < len(env.handlers); i++ {
+		if env.handlers[i].windowID == wid {
+			return &env.handlers[i]
+		}
+	}
+
+	return nil
+}
+
+func (env *Environment) removeHandler(handler *Handler) {
+	for i := 0; i < len(env.handlers); i++ {
+		if &env.handlers[i] == handler {
+			env.handlers = append(env.handlers[:i], env.handlers[i+1:]...)
+		}
+	}
+}
+
+func init() {
+	// help typechecker
+	var env *Environment
+	_ = backend.Environment(env)
 }

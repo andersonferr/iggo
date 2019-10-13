@@ -5,14 +5,16 @@ import (
 )
 
 func main() {
-	w := iggo.CreateWindow("Oi", 0, 0, 400, 300)
+	w1 := iggo.CreateWindow("Oi", 0, 0, 400, 300)
 
-	w2 := iggo.CreateWindow("Hello", 0, 0, 20, 50)
+	w2 := iggo.CreateWindow("Hello", 0, 0, 600, 500)
 
-	iggo.Use("XGB")
+	w3 := iggo.CreateWindow("Hello 2", 10, 10, 600, 500)
+
 	app := iggo.NewApplication()
-	app.AddWindow(w)
+	app.AddWindow(w1)
 	app.AddWindow(w2)
+	app.AddWindow(w3)
 
 	if err := app.Run(); err != nil {
 		panic(err)

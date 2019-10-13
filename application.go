@@ -17,6 +17,11 @@ type Application struct {
 
 // NewApplication creates a new application with default environment as backend.
 func NewApplication() *Application {
+	env, err := DefaultBackend.Create()
+	if err != nil {
+		panic(err)
+	}
+
 	return NewApplicationWithEnvironment(env)
 }
 
@@ -41,6 +46,7 @@ func (app *Application) Run() error {
 	return env.Run()
 }
 
+// AddWindow adds the given window to the application.
 func (app *Application) AddWindow(w *Window) {
 	handler, err := app.env.CreateHandler(w.title, w.x, w.y, w.width, w.height)
 

@@ -96,11 +96,6 @@ func (w *Window) Close() {
 	w.handler = nil
 }
 
-func (w *Window) draw() {
-	d := NewDrawer(w.buffer)
-	w.container.Draw(d)
-}
-
 func (w *Window) Parent() Container {
 	return nil
 }

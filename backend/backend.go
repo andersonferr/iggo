@@ -1,34 +1,68 @@
 package backend
 
 import (
-	"image"
+	"errors"
+	"fmt"
+	"sort"
 	"sync"
 )
 
-//Deployer é responsável por instalar a imagem na tela(screen)
-type Deployer interface {
-	//Deploy copia a imagem im para a tela(screen). a imagem im deve ter ordem MSB(Most Significant Byte First)
-	Deploy(im *image.RGBA, area image.Rectangle)
-}
+// Backend creates a new environment.
+type Backend interface {
+	// Name is the name of backend. the name must be constant.
+	Name() string
 
-// EnvironmentProvider provides a new environment.
-type EnvironmentProvider func() Environment
+	// Create creates a new environment.
+	Create() (Environment, error)
+}
 
 var (
-	handlers = map[string]EnvironmentProvider{}
-	mutex    sync.Mutex
+	backends   = make(map[string]Backend)
+	backendsMu sync.RWMutex
 )
 
-func Get(name string) EnvironmentProvider {
-	mutex.Lock()
-	defer mutex.Unlock()
+// Get gets a registered backend by name, or returns an error;
+func Get(name string) (Backend, error) {
+	backendsMu.RLock()
+	bk, ok := backends[name]
+	backendsMu.RUnlock()
 
-	return handlers[name]
+	if !ok {
+		return nil, fmt.Errorf("backend %q is not registered (forgot to import?)", name)
+	}
+
+	return bk, nil
 }
 
-func Register(name string, provider EnvironmentProvider) {
-	mutex.Lock()
-	defer mutex.Unlock()
+// Register registers a backend.
+func Register(backend Backend) {
+	if backend == nil {
+		panic(errors.New("backend must not be nil"))
+	}
 
-	handlers[name] = provider
+	name := backend.Name()
+	if name == "" {
+		panic(errors.New("backend must have a name"))
+	}
+
+	backendsMu.Lock()
+	backends[name] = backend
+	backendsMu.Unlock()
+}
+
+// List returns a list of all registered backends.
+func List() []string {
+	backendsMu.RLock()
+	defer backendsMu.RUnlock()
+
+	l := make([]string, len(backends), len(backends))
+	i := 0
+	for k := range backends {
+		l[i] = k
+		i++
+	}
+
+	sort.Strings(l)
+
+	return l
 }
