@@ -17,6 +17,11 @@ type Application struct {
 
 // NewApplication creates a new application with default environment as backend.
 func NewApplication() *Application {
+	env, err := DefaultBackend.Create()
+	if err != nil {
+		panic(err)
+	}
+
 	return NewApplicationWithEnvironment(env)
 }
 

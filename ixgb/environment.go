@@ -9,9 +9,6 @@ import (
 	"github.com/andersonferr/iggo/backend"
 )
 
-// BackendName the name of backend
-const BackendName = "XGB"
-
 // Environment implements backend.Environment for XGB.
 type Environment struct {
 	mu sync.Mutex
@@ -22,18 +19,7 @@ type Environment struct {
 	screen *xproto.ScreenInfo
 }
 
-func init() {
-	// help typechecker
-	var env *Environment
-	_ = backend.Environment(env)
-}
-
-func init() {
-	backend.Register(BackendName, func() backend.Environment {
-		return &Environment{}
-	})
-}
-
+// Run runs the app.
 func (env *Environment) Run() error {
 	if len(env.handlers) == 0 {
 		return nil
@@ -75,12 +61,19 @@ func (env *Environment) Run() error {
 				}
 
 			case xproto.ExposeEvent:
+				fmt.Printf("%#v\n", e)
 			case xproto.MapNotifyEvent:
+				fmt.Printf("%#v\n", e)
 			case xproto.UnmapNotifyEvent:
+				fmt.Printf("%#v\n", e)
 			case xproto.ButtonPressEvent:
+				fmt.Printf("%#v\n", e)
 			case xproto.ButtonReleaseEvent:
+				fmt.Printf("%#v\n", e)
 			case xproto.MotionNotifyEvent:
+				fmt.Printf("%#v\n", e)
 			default:
+				fmt.Printf("%#v\n", e)
 			}
 		}
 		if xerr != nil {
@@ -124,4 +117,10 @@ func (env *Environment) removeHandler(handler *Handler) {
 			env.handlers = append(env.handlers[:i], env.handlers[i+1:]...)
 		}
 	}
+}
+
+func init() {
+	// help typechecker
+	var env *Environment
+	_ = backend.Environment(env)
 }

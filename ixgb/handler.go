@@ -121,10 +121,6 @@ func (handler *Handler) Drawable() backend.Drawable {
 	return handler.drawable
 }
 
-func (handler *Handler) Deployer() backend.Deployer {
-	return newDeployer(handler.env, handler.windowID, handler.gcID)
-}
-
 // Destroy the handler freeing the resources allocated.
 func (handler *Handler) Destroy() {
 	panic("not implemented")

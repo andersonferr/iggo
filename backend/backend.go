@@ -3,16 +3,9 @@ package backend
 import (
 	"errors"
 	"fmt"
-	"image"
 	"sort"
 	"sync"
 )
-
-//Deployer é responsável por instalar a imagem na tela(screen)
-type Deployer interface {
-	//Deploy copia a imagem im para a tela(screen). a imagem im deve ter ordem MSB(Most Significant Byte First)
-	Deploy(im *image.RGBA, area image.Rectangle)
-}
 
 // Backend creates a new environment.
 type Backend interface {
